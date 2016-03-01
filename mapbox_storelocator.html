@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset=utf-8 />
+  <title>Store Locator with Sidebar</title>
+  <link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,700' rel='stylesheet'>
+  <script src='https://api.tiles.mapbox.com/mapbox.js/v2.2.4/mapbox.js'></script>
+  <link href='https://api.tiles.mapbox.com/mapbox.js/v2.2.4/mapbox.css' rel='stylesheet' />
+  <style>
+  body {
+    color:#404040;
+    font:400 15px/22px 'Source Sans Pro', 'Helvetica Neue', Sans-serif;
+    margin:0;
+    padding:0;
+    -webkit-font-smoothing:antialiased;
+  }
+  * {
+    -webkit-box-sizing:border-box;
+    -moz-box-sizing:border-box;
+    box-sizing:border-box;
+  }
+  h1 {
+    font-size:1.5em;
+    margin:0;
+    font-weight:400;
+  }
+  a {
+    color:#404040;
+    text-decoration:none;
+  }
+  a:hover { color:#101010; }
+
+  .sidebar {
+    position:absolute;
+    width:33.3333%;
+    height:100%;
+    top:0;left:0;
+    overflow:hidden;
+    border-right:1px solid rgba(0,0,0,0.25);
+  }
+  .pad2 {
+    padding:20px;
+  }
+  .quiet {
+    color:#888;
+  }
+  .map {
+    position:absolute;
+    left:33.3333%;
+    width:66.6666%;
+    top:0;bottom:0;
+  }
+  .heading {
+    background:#fff;
+    border-bottom:1px solid #eee;
+    height:4em;
+    line-height:2em;
+    padding:0 1em;
+  }
+  .listings {
+    height:100%;
+    overflow:auto;
+    padding-bottom:60px;
+  }
+  .listings .item {
+    display:block;
+    border-bottom:1px solid #eee;
+    padding:10px;
+    text-decoration:none;
+  }
+  .listings .item:last-child { border-bottom:none; }
+  .listings .item .title {
+    display:block;
+    color:#00853e;
+    font-weight:700;
+  }
+  .listings .item .title small { font-weight:400; }
+  .listings .item.active .title,
+  .listings .item .title:hover { color:#8cc63f; }
+  .listings .item.active {
+    background-color:#f8f8f8;
+  }
+
+  ::-webkit-scrollbar {
+    width:3px;
+    height:3px;
+    border-left:0;
+    background:rgba(0,0,0,0.1);
+  }
+  ::-webkit-scrollbar-track {
+    background:none;
+  }
+  ::-webkit-scrollbar-thumb {
+    background:#00853e;
+    border-radius:0;
+  }
+
+  .clearfix { display:block; }
+  .clearfix:after {
+    content:'.';
+    display:block;
+    height:0;
+    clear:both;
+    visibility:hidden;
+  }
+
+  /* Marker tweaks */
+  .leaflet-popup-close-button {
+    display:none;
+  }
+  .leaflet-popup-content {
+    font:400 15px/22px 'Source Sans Pro', 'Helvetica Neue', Sans-serif;
+    padding:0;
+    width:20em;
+  }
+  .leaflet-popup-content-wrapper {
+    padding:0;
+  }
+  .leaflet-popup-content h3 {
+    background:#91c949;
+    color:#fff;
+    margin:0;
+    display:block;
+    padding:10px;
+    border-radius:3px 3px 0 0;
+    font-weight:700;
+    margin-top:-15px;
+  }
+  .leaflet-popup-content div {
+    padding:10px;
+  }
+  .leaflet-container .leaflet-marker-icon { cursor:pointer; }
+  </style>
+</head>
+<body>
+<script src='https://api.mapbox.com/mapbox.js/plugins/leaflet-markercluster/v0.4.0/leaflet.markercluster.js'></script>
+<link href='https://api.mapbox.com/mapbox.js/plugins/leaflet-markercluster/v0.4.0/MarkerCluster.css' rel='stylesheet' />
+<link href='https://api.mapbox.com/mapbox.js/plugins/leaflet-markercluster/v0.4.0/MarkerCluster.Default.css' rel='stylesheet' />
+  <div class='sidebar'>
+    <div class='heading'>
+      <h3>Stores</h3>
+    </div>
+    <div id='listings' class='listings'></div>
+  </div>
+  <div id='map' class='map'> </div>
+  <script>
+  L.mapbox.accessToken = 'mapbox token ID';//Enter your mapbox token id here
+
+  //GeoJSON Datasource
+  var geojson = [{
+          "type": "FeatureCollection",
+          "features": [
+         {
+             "type": "Feature",
+             "geometry": {
+                 "type": "Point",
+                 "coordinates": [-114.071887, 51.033616]
+             },
+             "properties": {
+                 "title": "Store 1",
+                 "State": "Alberta",
+                 "Phone": "(403) 228-2934",
+                 "Fax": "(403) 228-9566",
+                 "Dealer": "Standard",
+                 "Address": "unit 109 2115- 4th St SW Calgary AB T2S 1W8",
+                 "Territory": ""
+             }
+         },
+         {
+             "type": "Feature",
+             "geometry": {
+                 "type": "Point",
+                 "coordinates": [-112.050017, 33.507739]
+             },
+             "properties": {
+                 "title": "Store 2",
+                 "State": "Arizona",
+                 "Phone": "(602) 264-2106",
+                 "Fax": "(602) 274-3698",
+                 "Dealer": "Standard",
+                 "Address": "4808 N 15th Street Phoenix AZ 85014",
+                 "Territory": ""
+             }
+         },
+         {
+             "type": "Feature",
+             "geometry": {
+                 "type": "Point",
+                 "coordinates": [-110.969954, 32.227278]
+             },
+             "properties": {
+                 "title": "Store 3",
+                 "State": "Arizona",
+                 "Phone": "(520) 623-3448",
+                 "Fax": "(520) 623-3566",
+                 "Dealer": "Standard",
+                 "Address": "440 N. 7th Avenue Tucson AZ 85705",
+                 "Territory": ""
+             }
+         },
+         {
+             "type": "Feature",
+             "geometry": {
+                 "type": "Point",
+                 "coordinates": [-111.840746, 33.411224]
+             },
+             "properties": {
+                 "title": "Store 4",
+                 "State": "Arizona",
+                 "Phone": "(480) 834-5817",
+                 "Fax": "",
+                 "Dealer": "Standard",
+                 "Address": "208 S. Country Club Drive Mesa AZ 85210",
+                 "Territory": ""
+             }
+         },
+         {
+             "type": "Feature",
+             "geometry": {
+                 "type": "Point",
+                 "coordinates": [-112.131099, 33.443804]
+             },
+             "properties": {
+                 "title": "Store 5",
+                 "State": "Arizona",
+                 "Phone": " (602) 269-0585",
+                 "Fax": "(602) 278-2567",
+                 "Dealer": "",
+                 "Address": "3201 W. Virginia Avenue Suite #5\nPhoenix, Arizona 85009",
+                 "Territory": "Arizona"
+             }
+         }
+          ]
+      }
+      ];
+
+
+ 
+  var map = L.mapbox.map('map', 'mapbox.streets')
+  .setView([39, -97], 4).addControl(L.mapbox.geocoderControl('mapbox.places', {
+        keepOpen: true,
+        autocomplete: true
+    }));
+
+
+  var listings = document.getElementById('listings');
+  var locations = L.mapbox.featureLayer().addTo(map);
+  locations.setGeoJSON(geojson);
+
+
+  function setActive(el) {
+    var siblings = listings.getElementsByTagName('div');
+    for (var i = 0; i < siblings.length; i++) {
+      siblings[i].className = siblings[i].className
+      .replace(/active/, '').replace(/\s\s*$/, '');
+    }
+
+    el.className += ' active';
+  }
+
+  locations.eachLayer(function(locale) {
+
+    // Shorten locale.feature.properties to just `prop`
+    var prop = locale.feature.properties;
+
+    // Each marker on the map.
+
+   //var popup = '<h3>Rep</h3><div>' + '<strong>' + prop.title + '</strong>'; 
+   var popup;
+   if(prop.Dealer){
+    popup = '<h3>Dealer</h3><div>' + '<strong>' + prop.title + '</strong>'; 
+   }
+
+   if(prop.Territory){
+    popup = '<h3>Wholesaler</h3><div>' + '<strong>' + prop.title + '</strong>'; 
+   }
+
+
+    var listing = listings.appendChild(document.createElement('div'));
+    listing.className = 'item';
+
+    var link = listing.appendChild(document.createElement('a'));
+    link.href = '#';
+    link.className = 'title';
+
+    link.innerHTML = prop.title;
+    if (prop.Address) {
+      link.innerHTML += '<br /><small class="quiet" style="color:#003200"><b>' + prop.State + '</b></small>';
+      popup += '<br /><small class="quiet"><b>Address: </b>' + prop.Address + '</small>';
+      popup += '<br /><small class="quiet"><b>Phone: </b>' + prop.Phone + '</small>';
+        if(prop.Fax){
+      popup += '<br /><small class="quiet"><b>Fax: </b>' + prop.Fax + '</small>';
+                    }
+        if(prop.Dealer){
+      popup += '<br /><small class="quiet"><b>Dealer Type: </b>' + prop.Dealer + '</small>';
+                    }
+        if(prop.Territory){
+      popup += '<br /><small class="quiet"><b>Territory: </b>' + prop.Territory + '</small>';
+                    }
+
+      popup += '<br /><small class="quiet"><a target= "_blank" href="http://maps.google.com/?q='+prop.Address+'">'+ 'Get Directions' + '</a></small>';
+    }
+
+    var details = listing.appendChild(document.createElement('div'));
+    details.innerHTML = '<small class="quiet"><b>Address: </b>' + prop.Address + '</small>';
+      //if (prop.Fax) {
+     // details.innerHTML += '<br /><small class="quiet"><b>Fax: </b>' + prop.Fax + '</small>';
+
+    //}
+
+    link.onclick = function() {
+      setActive(listing);
+
+      // When a menu item is clicked, animate the map to center
+      // its associated locale and open its popup.
+      map.setView(locale.getLatLng(), 10);
+      locale.openPopup();
+      return false;
+    };
+
+    // Marker interaction
+    locale.on('click', function(e) {
+      // 1. center the map on the selected marker.
+      map.panTo(locale.getLatLng());
+
+      // 2. Set active the markers associated listing.
+      setActive(listing);
+    });
+
+    popup += '</div>';
+    locale.bindPopup(popup);
+
+    if (prop.Dealer) {
+    locale.setIcon(L.mapbox.marker.icon({
+    'marker-size': 'medium',
+    'marker-symbol': 'marker',
+    'marker-color': '#FF748C'
+    }));
+  }
+  if (prop.Territory) {
+    locale.setIcon(L.mapbox.marker.icon({
+    'marker-size': 'medium',
+    'marker-symbol': 'marker',
+    'marker-color': '#548cba'
+    }));
+  }
+
+});
+
+</script>
+</body>
+</html>
